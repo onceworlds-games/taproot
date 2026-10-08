@@ -152,7 +152,8 @@ export const Grow = defineSystem({
         g.drinkCell = ev.cell;
         flow.stat('drops', 1, ctx.seats[s]?.id);
       }
-      if (ev.type === 'snip' && ev.cells.length > 0) {
+      // A snip worth the name: two or more cells cut off (a lone cell lost withers quietly).
+      if (ev.type === 'snip' && ev.cells.length >= 2) {
         g.snips = (g.snips + 1) % 65536;
         g.snipCell = ev.cell;
         g.snipSize = ev.cells.length;

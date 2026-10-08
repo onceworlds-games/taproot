@@ -255,6 +255,17 @@ function drawDish(ctx, view, world, now, quality) {
     ctx.fill();
   }
   drawRoots(ctx, v, b, now, low);
+  // The Flood: a cold wash of water over the dish, breathing.
+  if ((v.source === 'live' || v.source === 'frozen') && v.remaining > 0 && v.remaining <= TUNING.floodSeconds) {
+    const wash = ctx.createRadialGradient(0, 0, disc * 0.2, 0, 0, disc + 1.1);
+    const a = 0.1 + 0.05 * Math.sin(now * 4);
+    wash.addColorStop(0, alpha(COLORS.water, a * 0.4));
+    wash.addColorStop(1, alpha(COLORS.water, a));
+    ctx.beginPath();
+    ctx.arc(0, 0, disc + 1.05, 0, Math.PI * 2);
+    ctx.fillStyle = wash;
+    ctx.fill();
+  }
   drawWater(ctx, v, b, now);
   drawPlans(ctx, v, b, now);
   drawPreview(ctx, v, b, world, now);

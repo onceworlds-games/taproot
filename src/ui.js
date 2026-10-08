@@ -392,9 +392,9 @@ export function TaprootUi() {
                 const at = toScreen(g.x[v.refused.cell], g.y[v.refused.cell] + 1, scale);
                 if (at) p.text('✕', at.x + Math.sin(now * 60) * 3, at.y, { size: 28, color: COLORS.ember, weight: 800, outline: 4, outlineColor: COLORS.night });
               }
-              // The last ten seconds, big, over the top of the rim.
+              // The last ten seconds, big, just inside the top of the rim where the clock closes.
               if (v.source === 'live' && v.remaining > 0 && v.remaining <= 10 && world.resource(FlowState).phase === 'playing') {
-                const at = toScreen(0, g.disc + 1.6, scale);
+                const at = toScreen(0, g.disc - 0.4, scale);
                 if (at) {
                   const n = Math.ceil(v.remaining);
                   const beat = v.remaining % 1;

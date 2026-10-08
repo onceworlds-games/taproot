@@ -103,6 +103,9 @@ round ends. It turns blue for the Flood. The same rim frames the title, the lobb
 - **Title**: the dish with bots playing inside it, `TAPROOT` in clay over it with a root underline, one button `PLANT`.
 - **Lobby**: Flow's lobby restyled: each player is a seed bulb with their symbol and name; no BOT tags (bots have names and seeds).
 - **Countdown**: a seed cracking open on 3-2-1, `GROW!`.
+- **Three layouts**, from the screen's shape: a phone held upright (the cells across the whole width, the standings as a strip of
+  seeds above, my sap below), a squarer screen (the strip above, my sap bottom left) and a wide one (the standings as a column
+  to the right, my sap and the snips to the left). The HUD never covers the dish.
 - **HUD** (my own; Flow's hud off):
   - The rim clock (in the world).
   - My sap: a bulb at the bottom with the number and income (`+3.2/s`), and my cells and place.

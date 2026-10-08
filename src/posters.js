@@ -1,7 +1,7 @@
 // Store art, staged by the game's own code: a board grown by bots playing the real rules, then the moment that sells it, a snip,
 // posed on it. `onceworlds shot --poster <name>` draws one; ?poster=<name> on the page does the same for `onceworlds posters`.
 import { Transform, defineModule } from '@onceworlds/engine';
-import { Text } from '@onceworlds/engine/modules';
+import { Shape2D, Text } from '@onceworlds/engine/modules';
 import { DROP, ROCK, claim, crownOf, pathTo, reachMap, snipSizes, tally } from './rules.js';
 import { COLORS, FONT, seatLook } from './theme.js';
 import { DEMO_NAMES, grownBoard, viewOf } from './view.js';
@@ -148,6 +148,41 @@ function freeze(p, staged) {
   }
 }
 
+/** A badge: a clay medallion with an emblem drawn on soil. */
+function medallion(p, emblem) {
+  const v = viewOf(p.world);
+  v.posed = true;
+  v.board = null;
+  p.camera({ height: 5.2, clear: COLORS.night });
+  const at = (x, y) => Transform({ position: [x, y, 0] });
+  p.world.spawn([at(0, 0), Shape2D({ shape: 'circle', radius: 2.45, fill: COLORS.clayDark, layer: 3 })]);
+  p.world.spawn([at(0, 0), Shape2D({ shape: 'circle', radius: 2.3, fill: COLORS.clay, layer: 3, z: 1 })]);
+  p.world.spawn([at(0, 0), Shape2D({ shape: 'circle', radius: 2.0, fill: COLORS.loam, layer: 3, z: 2 })]);
+  emblem((parts) => p.world.spawn([at(parts.x ?? 0, parts.y ?? 0), Shape2D({ layer: 3, z: 3, ...parts.shape })]));
+  p.settle(0.1);
+}
+
+const BADGES = {
+  // A green root, cut by ember blades.
+  'first-snip': (add) => {
+    add({ shape: { shape: 'line', points: [[-1.4, -0.9], [-0.25, -0.15]], stroke: '#45e08a', strokeWidth: 0.32 } });
+    add({ shape: { shape: 'line', points: [[0.25, 0.15], [1.4, 0.9]], stroke: COLORS.ash, strokeWidth: 0.32, dash: 0.2 } });
+    add({ shape: { shape: 'line', points: [[-0.75, 0.75], [0.75, -0.75]], stroke: COLORS.ember, strokeWidth: 0.24 } });
+    add({ shape: { shape: 'line', points: [[-0.75, -0.75], [0.75, 0.75]], stroke: COLORS.ember, strokeWidth: 0.24 } });
+  },
+  // A long dead root, grey and broken, with the cut at its base.
+  'clean-cut': (add) => {
+    add({ shape: { shape: 'line', points: [[-1.3, -1.1], [-0.4, -0.3], [0.2, 0.4], [1.2, 1.1]], stroke: '#cfc5ba', strokeWidth: 0.28, dash: 0.22 } });
+    add({ x: -1.3, y: -1.1, shape: { shape: 'circle', radius: 0.42, fill: '#00000000', stroke: COLORS.ember, strokeWidth: 0.16 } });
+    add({ shape: { shape: 'line', points: [[-1.3, -1.1], [-1.75, -0.3]], stroke: '#45e08a', strokeWidth: 0.3 } });
+  },
+  // A seed with the crown.
+  'took-the-dish': (add) => {
+    add({ y: -0.35, shape: { shape: 'circle', radius: 0.95, fill: '#ff4f6e', stroke: COLORS.night, strokeWidth: 0.12 } });
+    add({ y: 0.95, shape: { shape: 'polygon', points: [[-0.85, 0], [-0.85, 0.6], [-0.42, 0.3], [0, 0.85], [0.42, 0.3], [0.85, 0.6], [0.85, 0]], fill: COLORS.gold, stroke: COLORS.night, strokeWidth: 0.1 } });
+  },
+};
+
 export function TaprootPosters() {
   return defineModule({
     name: 'taproot-posters',
@@ -212,6 +247,7 @@ export function TaprootPosters() {
         },
         { width: 512, height: 512 },
       );
+      for (const [id, emblem] of Object.entries(BADGES)) game.poster(`badge-${id}`, (p) => medallion(p, emblem), { width: 256, height: 256 });
     },
   });
 }

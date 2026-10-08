@@ -206,10 +206,6 @@ export const Effects = defineSystem({
       audio?.music?.setIntensity?.(1);
     }
     s.flood = flood;
-    // A finished match counts toward the coach growing quiet.
-    const phase = flow?.phase;
-    if (phase === 'results' && s.phase !== 'results' && v.me >= 0) world.resource(Profile).matches += 1;
-    s.phase = phase;
   },
 });
 

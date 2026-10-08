@@ -160,7 +160,10 @@ export const Grow = defineSystem({
         g.snipVictim = ev.victim;
         g.cut = Math.min(65535, g.cut + ev.cells.length);
         g.best = Math.max(g.best, ev.cells.length);
-        flow.stat('snipped', ev.cells.length, ctx.seats[s]?.id);
+        const id = ctx.seats[s]?.id;
+        flow.stat('snipped', ev.cells.length, id);
+        flow.stat('snips', 1, id);
+        if (ev.cells.length >= 10) flow.stat('cleanCuts', 1, id);
       }
     }
     // Water: a ripple shows where the next drop will rise, then it rises (if the soil there is still open).

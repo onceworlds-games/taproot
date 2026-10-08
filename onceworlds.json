@@ -19,5 +19,25 @@
     "store/cover.png",
     "store/snip.png",
     "store/dish.png"
+  ],
+  "badges": [
+    {
+      "id": "first-snip",
+      "name": "First Snip",
+      "description": "Cut through a rival's root.",
+      "icon": "store/badge-first-snip.png"
+    },
+    {
+      "id": "clean-cut",
+      "name": "Clean Cut",
+      "description": "Wither ten or more cells with one snip.",
+      "icon": "store/badge-clean-cut.png"
+    },
+    {
+      "id": "took-the-dish",
+      "name": "Took the Dish",
+      "description": "Win a match.",
+      "icon": "store/badge-took-the-dish.png"
+    }
   ]
 }

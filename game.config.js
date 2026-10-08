@@ -63,6 +63,18 @@ export function gameConfig(options = {}) {
         },
         scoring: Flow.placePoints([10, 7, 5, 3, 2, 1, 0, 0], { rounds: 'rounds' }),
         results: { awards: [Awards.most('Snipped', 'snipped'), Awards.most('Water drunk', 'drops')] },
+        // Badges (listed in onceworlds.json), a leaderboard, and the player's own save.
+        progress: {
+          done(_summary, ctx) {
+            ctx.world.resource(Profile).matches += 1;
+          },
+          badges: [
+            { id: 'first-snip', when: (m) => (m.stats.snips ?? 0) > 0 },
+            { id: 'clean-cut', when: (m) => (m.stats.cleanCuts ?? 0) > 0 },
+            { id: 'took-the-dish', when: (m) => m.won },
+          ],
+          leaderboards: [{ board: 'cells-snipped', score: (m) => (m.stats.snipped ? m.stats.snipped : null) }],
+        },
         timing: options.quick ? { banner: 0.4, roundEnd: 0.4, scoreboard: 0.4, results: 3 } : undefined,
       }),
       TaprootUi(),

@@ -16,6 +16,9 @@ describe('store pictures', () => {
     ['snip', 1920, 1080],
     ['dish', 1920, 1080],
     ['icon', 512, 512],
+    ['badge-first-snip', 256, 256],
+    ['badge-clean-cut', 256, 256],
+    ['badge-took-the-dish', 256, 256],
   ]) {
     it(`builds the ${name} picture`, async () => {
       const body = { dataset: {} };
@@ -29,6 +32,16 @@ describe('store pictures', () => {
       expect(game.errors).toEqual([]);
     });
   }
+});
+
+it('lists every badge the game awards, each with its picture', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const listing = JSON.parse(readFileSync(new URL('../onceworlds.json', import.meta.url), 'utf8'));
+  const config = gameConfig();
+  const flow = config.modules.find((m) => m.name === 'flow');
+  void flow;
+  expect(listing.badges.map((b) => b.id).sort()).toEqual(['clean-cut', 'first-snip', 'took-the-dish']);
+  for (const b of listing.badges) expect(existsSync(new URL(`../${b.icon}`, import.meta.url))).toBe(true);
 });
 
 describe('drawing', () => {

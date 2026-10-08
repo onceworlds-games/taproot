@@ -3,7 +3,7 @@
 // top on a phone held upright), the last snips, names under the seeds, the preview's price, and round 1's coaching.
 import { defineModule } from '@onceworlds/engine';
 import { FlowState, UI, servicesOf } from '@onceworlds/engine/modules';
-import { Aim } from './components.js';
+import { Aim, Profile } from './components.js';
 import { reachMap, snipSizes, DROP, TUNING } from './rules.js';
 import { COLORS, SEATS, TITLE, alpha, seatLook } from './theme.js';
 import { viewOf } from './view.js';
@@ -80,6 +80,18 @@ function seatOfId(world, id, fallback) {
   const v = viewOf(world);
   const found = v.growers.find((o) => o.id === id);
   return found ? found.seat : fallback;
+}
+
+/** The round's biggest snip, as a line for the scoreboard: who caused the swing. */
+function biggestSnip(world) {
+  const v = viewOf(world);
+  const top = [...v.growers].sort((a, b) => b.best - a.best)[0];
+  if (!top || top.best < 2) return false;
+  return UI.row(
+    { gap: 6, align: 'center', justify: 'center' },
+    UI.custom({ w: 22, h: 18, draw: (p, r) => scissors(p, r.x + r.w / 2, r.y + r.h / 2, 8) }),
+    UI.label(`BIGGEST SNIP: ${top.me ? 'YOU' : short(top.name, 10).toUpperCase()} ${top.best}`, { size: 18, color: COLORS.clay, weight: 800 }),
+  );
 }
 
 // ---------------------------------------------------------------- Flow's screens, in the dish's look
@@ -191,6 +203,7 @@ export function flowViews() {
           ),
         ),
         s.note ? UI.label(s.note, { size: 18, color: '#c7ad86', align: 'center' }) : false,
+        biggestSnip(ctx.world),
       ),
     results: (s, ctx) =>
       UI.panel(
@@ -243,7 +256,8 @@ function coachOf(world, v, now) {
   const c = (v.coach = v.coach ?? { at: -1, step: 'water', target: -1, snipDone: false, guardDone: false, shownSnip: -1, shownGuard: -1 });
   const aim = world.resource(Aim);
   const flow = world.resource(FlowState);
-  if (flow.round !== 1 || v.me < 0 || !v.board) return null;
+  // Round 1 of a player's first two matches.
+  if (flow.round !== 1 || v.me < 0 || !v.board || world.resource(Profile).matches >= 2) return null;
   if (now - c.at < 0.3) return c;
   c.at = now;
   const b = v.board;

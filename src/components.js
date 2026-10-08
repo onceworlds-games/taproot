@@ -2,6 +2,7 @@
 // what it holds or how much sap it has. A player asks for an order with a call (see host.js); everything else is worked out from
 // these on every page.
 import { defineComponent, defineResource, t } from '@onceworlds/engine';
+import { defineSave } from '@onceworlds/engine/modules';
 
 /** Room for the biggest dish (211 cells). */
 export const MAX_CELLS = 256;
@@ -84,3 +85,6 @@ export const Aim = defineResource('Aim', {
   lastOrderAt: t.f32(-10),
   holding: t.bool(false),
 });
+
+/** What this player keeps between visits: matches finished (the coach stops after two), snips made, the biggest one. */
+export const Profile = defineSave('TaprootProfile', { matches: t.u16(), snips: t.u32(), best: t.u16() });

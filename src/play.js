@@ -2,7 +2,7 @@
 // gets a sound and some motion, snips get their moment, and the camera keeps the dish framed on any screen.
 import { Transform, defineModule, defineSystem } from '@onceworlds/engine';
 import { Camera, FlowState, Input, servicesOf } from '@onceworlds/engine/modules';
-import { Aim, DishCamera, Soil } from './components.js';
+import { Aim, DishCamera, Profile, Soil } from './components.js';
 import { soilEntity } from './host.js';
 import { ROCK, TUNING, isSeed, preview } from './rules.js';
 import { COLORS, seatLook } from './theme.js';
@@ -174,6 +174,14 @@ export const Effects = defineSystem({
       if (quiet) return;
       const involved = o.seat === v.me || o.snipVictim === v.me;
       const big = o.snipSize >= 8;
+      if (o.seat === v.me) {
+        const profile = world.resource(Profile);
+        profile.snips += 1;
+        profile.best = Math.max(profile.best, o.snipSize);
+      }
+      // A big one is a moment: say it, in the middle, to the two it happened to.
+      if (big && o.seat === v.me) ui?.callout(`SNIP ${o.snipSize}!`, { color: seatLook(o.seat).color, size: 64, ms: 1100 });
+      else if (big && o.snipVictim === v.me) ui?.callout(`SNIPPED −${o.snipSize}`, { color: COLORS.ember, size: 56, ms: 1100 });
       audio?.play('snip', { volume: involved ? 1 : 0.55, pitch: big ? 0.85 : 1 });
       feel?.floatText(`SNIP ${o.snipSize}`, at(o.snipCell), { color: seatLook(o.seat).color, size: 0.7 + Math.min(0.8, o.snipSize * 0.05), rise: 1.8, ms: 1300 });
       feel?.particles.burst('sparks', at(o.snipCell), { count: 10 + Math.min(20, o.snipSize), color: [COLORS.ember, '#ffd0b0'], scale: 0.6 });
@@ -198,6 +206,10 @@ export const Effects = defineSystem({
       audio?.music?.setIntensity?.(1);
     }
     s.flood = flood;
+    // A finished match counts toward the coach growing quiet.
+    const phase = flow?.phase;
+    if (phase === 'results' && s.phase !== 'results' && v.me >= 0) world.resource(Profile).matches += 1;
+    s.phase = phase;
   },
 });
 

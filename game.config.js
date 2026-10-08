@@ -1,7 +1,7 @@
 import { Transform } from '@onceworlds/engine';
-import { Audio, Awards, Bot, Feel, Flow, Input, Net, Render2D, UI, camera2D } from '@onceworlds/engine/modules';
+import { Audio, Awards, Bot, Feel, Flow, Input, Net, Render2D, Save, UI, camera2D } from '@onceworlds/engine/modules';
 import { BotBrain } from './src/bots.js';
-import { Aim, DishCamera, Grower, HostClock, Planter, Soil } from './src/components.js';
+import { Aim, DishCamera, Grower, HostClock, Planter, Profile, Soil } from './src/components.js';
 import { DrawBoard } from './src/draw.js';
 import { Grow, Orders, planterParts, populateRound } from './src/host.js';
 import { Aiming, CameraFit, Effects, Music, Sounds, actions } from './src/play.js';
@@ -31,6 +31,7 @@ export function gameConfig(options = {}) {
       Input({ actions }),
       Audio(),
       Sounds(),
+      Save(Profile),
       UI({ title: TITLE, theme, flowViews: flowViews() }),
       // Only these cross the network: the board and the seats' roots (the host's), and every seat's body.
       Net({ components: [Soil, Grower, Planter, Bot] }),

@@ -9,7 +9,7 @@
 //   now         the round's second now
 //   crown       the seat in the lead (its cells are cheaper to take), or -1
 
-import { DIRS, geometry } from './hex.js';
+import { geometry } from './hex.js';
 
 export const SOIL = 0;
 export const ROCK = 1;

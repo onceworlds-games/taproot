@@ -3,7 +3,7 @@
 // is the round's clock. World units: a cell is 1 from its middle to a corner, y points up.
 import { defineSystem } from '@onceworlds/engine';
 import { Aim } from './components.js';
-import { DIRS, hexCorners } from './hex.js';
+import { hexCorners } from './hex.js';
 import { viewOf } from './view.js';
 import { DROP, NO_PARENT, ROCK, SEED_PARENT, TUNING, support } from './rules.js';
 import { COLORS, alpha, mix, seatLook } from './theme.js';
@@ -652,4 +652,3 @@ function drawFlashes(ctx, v, b, now) {
   }
 }
 
-export { DIRS };

@@ -6,7 +6,7 @@ import { FlowState } from '@onceworlds/engine/modules';
 import { STYLES, STYLE_NAMES, chooseOrder } from './brain.js';
 import { Grower, Soil } from './components.js';
 import { boardOf, growersOf, soilEntity } from './host.js';
-import { DROP, TUNING, cloneBoard, dropsOf, crownOf, leaderOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from './rules.js';
+import { DROP, TUNING, cloneBoard, dropsOf, crownOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from './rules.js';
 
 const views = new WeakMap();
 

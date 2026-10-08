@@ -26,7 +26,7 @@ export const DrawBoard = defineSystem({
       draw(ctx, view) {
         if (view.world && view.world !== world) return;
         try {
-          drawDish(ctx, view, world, time.now);
+          drawDish(ctx, view, world, time.now, render.quality ?? 'high');
         } catch (err) {
           // Never let a drawing slip stop the frame.
           if (!registered.warned) {
@@ -112,7 +112,9 @@ export function symbolPath(ctx, symbol, x, y, r) {
   ctx.closePath();
 }
 
-function drawDish(ctx, view, world, now) {
+function drawDish(ctx, view, world, now, quality) {
+  // The low Graphics setting (older phones) leaves out the grit and the glow under the roots.
+  const low = quality === 'low';
   const v = viewOf(world);
   const b = v.board;
   ctx.save();
@@ -141,7 +143,7 @@ function drawDish(ctx, view, world, now) {
   }
   const g = b.g;
   // Specks of grit in the soil (two paths: light and dark).
-  for (const light of [true, false]) {
+  for (const light of low ? [] : [true, false]) {
     ctx.beginPath();
     for (const s of specksFor(g)) {
       if (s.light !== light) continue;
@@ -252,7 +254,7 @@ function drawDish(ctx, view, world, now) {
     ctx.fillStyle = COLORS.stoneLight;
     ctx.fill();
   }
-  drawRoots(ctx, v, b, now);
+  drawRoots(ctx, v, b, now, low);
   drawWater(ctx, v, b, now);
   drawPlans(ctx, v, b, now);
   drawPreview(ctx, v, b, world, now);
@@ -335,13 +337,13 @@ const thickOf = (b, i) => {
   return n <= 1 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : 3;
 };
 
-function drawRoots(ctx, v, b, now) {
+function drawRoots(ctx, v, b, now, low) {
   const g = b.g;
   for (let s = 0; s < b.seats; s++) {
     const look = seatLook(s);
     // A root is as thick as it is hard to cut (how many of its own cells hold it). Two strokes per thickness: a soft glow under
     // a bright core.
-    for (let pass = 0; pass < 2; pass++) {
+    for (let pass = low ? 1 : 0; pass < 2; pass++) {
       for (let thick = 0; thick <= 3; thick++) {
         ctx.beginPath();
         let any = false;

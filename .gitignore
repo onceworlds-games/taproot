@@ -1,0 +1,6 @@
+# What npm install puts here (the engine, for tests and check): never part of the repo.
+node_modules/
+# Pictures onceworlds shot saves to look at. The icon and thumbnails onceworlds.json names stay in store/.
+store/shot*.png
+.DS_Store
+*.log

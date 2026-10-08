@@ -1,0 +1,14 @@
+{
+  "name": "taproot",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@onceworlds/engine": "^1.2.0"
+  },
+  "scripts": {
+    "test": "vitest run --testTimeout=60000"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}

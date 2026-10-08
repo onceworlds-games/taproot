@@ -15,6 +15,9 @@ export const actions = {
 
 const out = { x: 0, y: 0 };
 
+/** From this width-to-height on, the standings are a column beside the dish; below it, a strip above it. */
+export const WIDE = 1.55;
+
 /** The cell under a screen point, or -1. */
 function cellUnder(render2d, v, x, y) {
   if (!v.board || !render2d?.screenToWorld(x, y, out)) return -1;
@@ -78,6 +81,9 @@ export function Sounds() {
     install(game) {
       const audio = servicesOf(game).audio;
       if (!audio?.effect) return;
+      // Engine 1.3.1's Flow calls audio.resume() when Play is pressed, but its AudioService has no resume (only its types do):
+      // the press throws in 'flow:sync'. Give it one that starts the sound, as the first tap would.
+      if (typeof audio.resume !== 'function') audio.resume = () => Promise.resolve(audio.start?.());
       audio.effect('grow', { voices: [{ kind: 'osc', wave: 'sine', freq: 520, freqEnd: 780, dur: 0.07, gain: 0.16, attack: 0.005 }] });
       audio.effect('order', { voices: [{ kind: 'osc', wave: 'triangle', freq: 660, freqEnd: 990, dur: 0.05, gain: 0.18 }] });
       audio.effect('snip', {
@@ -234,8 +240,12 @@ export const CameraFit = defineSystem({
         const cells = 2 * (disc + 0.75);
         camera.height = Math.max(cells / aspect, D * 1.35);
         tr.position.set(0, -camera.height * 0.015, 0);
+      } else if (aspect < WIDE) {
+        // Squarer screens (a tablet, a small window): the standings strip across the top, so the dish sits a little lower.
+        camera.height = D * 1.3;
+        tr.position.set(0, D * 0.08, 0);
       } else {
-        // Wide: the dish in the middle, as tall as the screen; my sap on the left of it, the standings on the right.
+        // Wide: the dish in the middle, as tall as the screen; the standings to its right, my sap and the snips to its left.
         camera.height = D * 1.04;
         tr.position.set(0, 0, 0);
       }

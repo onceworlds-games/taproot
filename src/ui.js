@@ -7,6 +7,7 @@ import { Aim } from './components.js';
 import { reachMap, snipSizes, DROP, TUNING } from './rules.js';
 import { COLORS, SEATS, TITLE, alpha, seatLook } from './theme.js';
 import { viewOf } from './view.js';
+import { WIDE } from './play.js';
 
 // ---------------------------------------------------------------- a seed bulb, the player's piece everywhere
 
@@ -231,6 +232,9 @@ export function flowViews() {
 
 // ---------------------------------------------------------------- the HUD
 
+/** A screen wide enough for the standings as a column beside the dish. */
+const wide = (ctx) => ctx.width / Math.max(1, ctx.height) >= WIDE;
+
 /** While a round is played (and a poster that asks for the HUD). */
 const playing = ({ flow, world }) => !!flow && flow.phase === 'playing' && viewOf(world).hud !== false;
 
@@ -361,7 +365,8 @@ export function TaprootUi() {
               const aim = world.resource(Aim);
               const pv = v.preview;
               if (pv && aim.cell >= 0 && aim.cell < g.count) {
-                const at = toScreen(g.x[aim.cell], g.y[aim.cell] + 1.2, scale);
+                // Under the cell, so it never sits on the coach's words (above their target).
+                const at = toScreen(g.x[aim.cell], g.y[aim.cell] - 1.35, scale);
                 if (at) {
                   const words =
                     pv.kind === 'none' ? 'NO WAY' : pv.kind === 'bloom' ? (pv.path.length ? `THICKEN ${pv.path.length}` : 'FULL') : pv.doomed.length ? `SNIP ${pv.doomed.length} · ${Math.round(pv.cost)} SAP` : `${Math.round(pv.cost)} SAP`;
@@ -427,7 +432,7 @@ export function TaprootUi() {
                 p.circle(x, y + 4, 24, { fill: flood ? '#bff4ff' : COLORS.water });
                 p.unclip();
                 p.polygon([x - 12, y - 14, x, y - 32, x + 12, y - 14], { fill: alpha(COLORS.water, 0.4) });
-                p.text(String(Math.floor(me.sap)), x, y + 5, { size: 24, color: COLORS.night, weight: 800 });
+                p.text(String(Math.floor(me.sap)), x, y + 5, { size: 24, color: '#fff6e0', weight: 800, outline: 4, outlineColor: COLORS.night });
               },
             }),
             UI.column(
@@ -473,7 +478,7 @@ export function TaprootUi() {
             ),
           );
         },
-        { anchor: 'top-right', offset: [10, 10], order: 5, when: (ctx) => playing(ctx) && !ctx.portrait },
+        { anchor: 'top-right', offset: [10, 10], order: 5, when: (ctx) => playing(ctx) && wide(ctx) },
       );
       ui.view(
         'taproot.strip',
@@ -493,7 +498,7 @@ export function TaprootUi() {
               ),
           );
         },
-        { anchor: 'top', offset: [0, 62], order: 5, when: (ctx) => playing(ctx) && ctx.portrait },
+        { anchor: 'top', offset: [0, 62], order: 5, when: (ctx) => playing(ctx) && !wide(ctx) },
       );
 
       // The last snips: who cut whom, and how much.
@@ -518,7 +523,7 @@ export function TaprootUi() {
             ),
           );
         },
-        { anchor: 'left', offset: [10, 0], order: 5, when: (ctx) => playing(ctx) && !ctx.portrait },
+        { anchor: 'left', offset: [10, 0], order: 5, when: (ctx) => playing(ctx) && wide(ctx) },
       );
       // On a phone: the latest snip, one line under the standings.
       ui.view(
@@ -536,7 +541,7 @@ export function TaprootUi() {
             UI.label(`−${f.size}`, { size: 18, color: COLORS.ember, weight: 800 }),
           );
         },
-        { anchor: 'top', offset: [0, 128], order: 5, when: (ctx) => playing(ctx) && ctx.portrait },
+        { anchor: 'top', offset: [0, 128], order: 5, when: (ctx) => playing(ctx) && !wide(ctx) },
       );
     },
   });

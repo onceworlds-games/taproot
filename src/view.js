@@ -233,6 +233,14 @@ export const ShowBoard = defineSystem({
       v.source = 'frozen';
       return;
     }
+    // The countdown before a round: the empty dish, waiting for the seeds.
+    if (phase === 'countdown') {
+      v.source = 'none';
+      v.board = null;
+      v.growers = [];
+      v.me = -1;
+      return;
+    }
     // Title and lobby: the demo.
     if (!v.demo || v.demo.t > 70) v.demo = startDemo(v.demo ? v.demo.round + 1 : 0);
     const fresh = v.source !== 'demo' || v.key !== `demo:${v.demo.round}`;

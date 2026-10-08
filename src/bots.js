@@ -25,7 +25,7 @@ export const BotBrain = defineBotSystem({
     if (!b) return;
     const now = world.time.now;
     if (now < (nextLook.get(ctx.entity) ?? 0)) return;
-    nextLook.set(ctx.entity, now + 0.9 + (1 - (bot.skill ?? 0.5)) * 0.8 + ctx.rng.float(0, 0.5));
+    nextLook.set(ctx.entity, now + 1.2 + (1 - (bot.skill ?? 0.5)) * 0.9 + ctx.rng.float(0, 0.5));
     const growers = growersOf(world);
     const me = growers.find((e) => e && e.get(Grower).id === planter.seat);
     if (!me) return;

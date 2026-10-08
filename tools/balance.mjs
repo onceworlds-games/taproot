@@ -8,6 +8,8 @@ import { DROP, TUNING, dropsOf, crownOf, leaderOf, makeBoard, pathTo, pickDropCe
 
 const rounds = Number(process.argv[2] ?? 200);
 const seats = Number(process.argv[3] ?? 6);
+// `casual`: seat 0 plays like a newcomer (looks every 2 to 3.5 s, often picks a worse move); its average place is printed.
+const casual = process.argv.includes('casual');
 const DT = 1 / 60;
 const whyTakes = {};
 
@@ -44,13 +46,13 @@ function playRound(seed, styleOf) {
       const gr = growers[s];
       gr.think -= DT;
       if (gr.think <= 0) {
-        gr.think = rng.float(0.9, 2.0);
+        gr.think = casual && s === 0 ? rng.float(2, 3.5) : rng.float(1.2, 2.4);
         const threatened = new Set();
         for (let o = 0; o < seats; o++) {
           if (o === s || growers[o].mode !== 'reach') continue;
           for (const c of pathTo(b, o, growers[o].target)) if (b.owner[c] === s + 1) threatened.add(c);
         }
-        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: t < 0, left: total - t, leader, sap: gr.sap });
+        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: casual && s === 0 ? 0.35 : 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: t < 0, left: total - t, leader, sap: gr.sap });
         if (pick) {
           gr.target = pick.target;
           gr.why = pick.why;
@@ -104,6 +106,7 @@ let spread = 0;
 let firstWater = 0;
 let firstWaterN = 0;
 let takes = 0;
+let casualPlace = 0;
 let halfWins = 0;
 let floodWins = 0;
 let drops = 0;
@@ -117,6 +120,7 @@ for (let k = 0; k < rounds; k++) {
   const r = playRound(k + 1, (s) => styles[s]);
   const best = Math.max(...r.cells);
   const winner = r.cells.indexOf(best);
+  casualPlace += 1 + r.cells.filter((c) => c > r.cells[0]).length;
   winsBySeat[winner]++;
   if (r.stats.halfLeader === winner) halfWins++;
   if (r.stats.floodLeader === winner) floodWins++;
@@ -153,4 +157,5 @@ console.log('takes by reason', JSON.stringify(whyTakes));
 console.log(`leader at half time wins: ${f((100 * halfWins) / rounds, 0)}%, leader when the Flood starts wins: ${f((100 * floodWins) / rounds, 0)}%`);
 console.log(`drops risen a round: ${f(drops / rounds)}, drunk: ${f(drunk / rounds)}`);
 console.log(`board 88% taken at: ${f(fullAt / rounds)} s`);
+if (casual) console.log(`the casual seat's average place: ${f(casualPlace / rounds)} of ${seats}`);
 console.log(`first water at: ${f(firstWater / Math.max(1, firstWaterN))} s`);

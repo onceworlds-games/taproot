@@ -96,11 +96,11 @@ function rootLine(p, x, y, w, t) {
 
 export function flowViews() {
   return {
-    title: (s) =>
+    title: (s, ctx) =>
       UI.column(
         { align: 'center', gap: 10, opacity: s.enter },
-        UI.label(s.title || TITLE, { size: 104, color: COLORS.clay, weight: 800, outline: 7, outlineColor: COLORS.night }),
-        UI.custom({ w: 340, h: 26, draw: (p, r) => rootLine(p, r.x + r.w / 2, r.y + r.h / 2, r.w, s.age) }),
+        UI.label(s.title || TITLE, { size: Math.min(104, (ctx?.width ?? 800) * 0.17), color: COLORS.clay, weight: 800, outline: 7, outlineColor: COLORS.night }),
+        UI.custom({ w: Math.min(340, (ctx?.width ?? 800) * 0.7), h: 26, draw: (p, r) => rootLine(p, r.x + r.w / 2, r.y + r.h / 2, r.w, s.age) }),
         UI.label('GROW · SNIP · WITHER', { size: 22, color: COLORS.water, weight: 800, outline: 4, outlineColor: COLORS.night }),
         UI.spacer?.(6) ?? false,
         UI.button('PLANT', { kind: 'primary', size: 34, fill: '#45e08a', color: COLORS.night, w: 240, ...s.play }),

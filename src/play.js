@@ -219,9 +219,11 @@ export const CameraFit = defineSystem({
     const aspect = screen && screen.w > 0 && screen.h > 0 ? screen.w / screen.h : 16 / 9;
     query.each((_e, _tag, camera, tr) => {
       if (aspect < 0.9) {
-        // Portrait: the dish across the width; the standings above it, the sap below.
-        camera.height = Math.max(D / aspect / 0.98, D * 1.5);
-        tr.position.set(0, -camera.height * 0.02, 0);
+        // Portrait: the cells across the whole width (the rim runs off the sides; its top, where the clock starts and ends,
+        // stays in view); the standings above, the sap below.
+        const cells = 2 * (disc + 0.75);
+        camera.height = Math.max(cells / aspect, D * 1.35);
+        tr.position.set(0, -camera.height * 0.015, 0);
       } else {
         // Wide: the dish in the middle, as tall as the screen; my sap on the left of it, the standings on the right.
         camera.height = D * 1.04;

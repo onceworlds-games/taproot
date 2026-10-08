@@ -37,9 +37,6 @@ describe('store pictures', () => {
 it('lists every badge the game awards, each with its picture', async () => {
   const { readFileSync, existsSync } = await import('node:fs');
   const listing = JSON.parse(readFileSync(new URL('../onceworlds.json', import.meta.url), 'utf8'));
-  const config = gameConfig();
-  const flow = config.modules.find((m) => m.name === 'flow');
-  void flow;
   expect(listing.badges.map((b) => b.id).sort()).toEqual(['clean-cut', 'first-snip', 'took-the-dish']);
   for (const b of listing.badges) expect(existsSync(new URL(`../${b.icon}`, import.meta.url))).toBe(true);
 });

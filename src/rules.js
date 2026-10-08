@@ -514,6 +514,16 @@ export function leaderOf(cells) {
 /** Everyone's sap a second at a moment of the round (before the Flood doubles it). */
 export const incomeAt = (seconds) => TUNING.baseIncome + TUNING.incomeRamp * Math.max(0, Math.min(1, seconds / TUNING.roundSeconds));
 
+/** Who wears the crown: the leader, but it only changes hands when someone is ahead of the wearer by two (no flicker). */
+export function crownOf(cells, current) {
+  if (current < 0 || current >= cells.length) return leaderOf(cells);
+  let best = current;
+  cells.forEach((n, s) => {
+    if (n >= cells[current] + 2 && n > cells[best]) best = s;
+  });
+  return best;
+}
+
 /** Cells and sap a second per seat. */
 export function tally(b) {
   const cells = new Array(b.seats).fill(0);

@@ -7,10 +7,17 @@
   "controls": [
     {
       "keys": [
-        "Click"
+        "Click",
+        "Tap"
       ],
-      "action": "Grow toward it"
+      "action": "Grow there (your roots: thicken)"
     }
   ],
-  "genre": "Strategy"
+  "genre": "Strategy",
+  "icon": "store/icon.png",
+  "thumbnails": [
+    "store/cover.png",
+    "store/snip.png",
+    "store/dish.png"
+  ]
 }

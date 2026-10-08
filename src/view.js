@@ -6,7 +6,7 @@ import { FlowState } from '@onceworlds/engine/modules';
 import { STYLES, STYLE_NAMES, chooseOrder } from './brain.js';
 import { Grower, Soil } from './components.js';
 import { boardOf, growersOf, soilEntity } from './host.js';
-import { DROP, TUNING, cloneBoard, dropsOf, leaderOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from './rules.js';
+import { DROP, TUNING, cloneBoard, dropsOf, crownOf, leaderOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from './rules.js';
 
 const views = new WeakMap();
 
@@ -40,6 +40,8 @@ export function viewOf(world) {
 
 function resetAnim(v, n) {
   v.prevOwner = new Uint8Array(n);
+  v.prevParent = new Uint8Array(n);
+  v.ashParent = new Uint8Array(n).fill(7);
   v.prevTerrain = new Uint8Array(n);
   v.popAt = new Float32Array(n).fill(-10);
   v.ashAt = new Float32Array(n).fill(-10);
@@ -53,6 +55,7 @@ function diff(v, b, now, fresh) {
   if (!v.prevOwner || v.prevOwner.length !== n || fresh) {
     resetAnim(v, n);
     v.prevOwner.set(b.owner);
+    v.prevParent.set(b.parent);
     v.prevTerrain.set(b.terrain);
     return;
   }
@@ -66,6 +69,7 @@ function diff(v, b, now, fresh) {
       } else {
         v.ashAt[i] = now;
         v.ashOwner[i] = was;
+        v.ashParent[i] = v.prevParent[i];
         v.changes.push({ type: 'wither', cell: i, owner: was });
       }
     }
@@ -77,13 +81,25 @@ function diff(v, b, now, fresh) {
     } else if (wt !== DROP && it === DROP) v.changes.push({ type: 'rise', cell: i });
   }
   v.prevOwner.set(b.owner);
+  v.prevParent.set(b.parent);
   v.prevTerrain.set(b.terrain);
+}
+
+/** Grows a natural-looking board: bots playing by the real rules for `seconds` (posters and tests). */
+export function grownBoard(seats, seed, seconds) {
+  const d = startDemo(seed);
+  d.b = makeBoard(seats, 11 + seed * 7, 0);
+  d.growers = d.growers.slice(0, seats);
+  while (d.growers.length < seats) d.growers.push({ ...d.growers[0], think: 0.5 });
+  const step = 1 / 30;
+  for (let t = 0; t < seconds; t += step) stepDemoSeats(d, step, seats);
+  return d;
 }
 
 // ---------------------------------------------------------------- the demo behind the title and the lobby
 
 const DEMO_SEATS = 6;
-const DEMO_NAMES = ['Moss', 'Fern', 'Burr', 'Sorrel', 'Wren', 'Pip'];
+export const DEMO_NAMES = ['Moss', 'Fern', 'Burr', 'Sorrel', 'Wren', 'Pip', 'Tansy', 'Rue'];
 
 function startDemo(round) {
   const b = makeBoard(DEMO_SEATS, 11 + round * 7, round % DEMO_SEATS);
@@ -93,14 +109,18 @@ function startDemo(round) {
 }
 
 function stepDemo(d, dt) {
+  stepDemoSeats(d, dt, DEMO_SEATS);
+}
+
+function stepDemoSeats(d, dt, seats) {
   const b = d.b;
   d.t += dt;
   b.now = d.t;
   d.tick++;
   const { cells, income } = tally(b);
-  b.crown = leaderOf(cells);
-  for (let k = 0; k < DEMO_SEATS; k++) {
-    const s = (k + d.tick) % DEMO_SEATS;
+  b.crown = crownOf(cells, b.crown ?? -1);
+  for (let k = 0; k < seats; k++) {
+    const s = (k + d.tick) % seats;
     const g = d.growers[s];
     g.think -= dt;
     if (g.think <= 0) {
@@ -119,7 +139,7 @@ function stepDemo(d, dt) {
   }
   if (d.warn < 0 && d.t >= d.nextDrop) {
     d.nextDrop = d.t + TUNING.dropEvery;
-    if (dropsOf(b).length < DEMO_SEATS) {
+    if (dropsOf(b).length < seats) {
       d.warn = pickDropCell(b, d.rng);
       d.warnAt = d.t + TUNING.dropWarn;
     }
@@ -145,6 +165,8 @@ export const ShowBoard = defineSystem({
   run({ world, time, flow }) {
     const v = viewOf(world);
     v.changes.length = 0;
+    // A poster poses the view itself (posters.js): leave it as it is.
+    if (v.posed) return;
     const state = world.resource(FlowState);
     const live = soilEntity(world) ? boardOf(world) : null;
     const phase = state.phase;

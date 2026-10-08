@@ -5,7 +5,7 @@ import { defineModule, defineSystem, t } from '@onceworlds/engine';
 import { netOf } from '@onceworlds/engine/modules';
 import { decode, encode, encodeLive } from './codec.js';
 import { Grower, HostClock, Planter, Soil } from './components.js';
-import { DROP, ROCK, SOIL, TUNING, dropsOf, isSeed, leaderOf, makeBoard, pathTo, pickDropCell, stepGrower, tally } from './rules.js';
+import { DROP, ROCK, SOIL, TUNING, dropsOf, isSeed, crownOf, leaderOf, makeBoard, pathTo, pickDropCell, stepGrower, tally } from './rules.js';
 
 // ---------------------------------------------------------------- reading the board
 
@@ -125,7 +125,7 @@ export const Grow = defineSystem({
     b.round = ctx.round;
     const growers = growersOf(world);
     const { cells, income } = tally(b);
-    b.crown = leaderOf(cells);
+    b.crown = crownOf(cells, b.crown ?? -1);
     const flood = ctx.remaining !== undefined && ctx.remaining <= TUNING.floodSeconds;
     const clock = world.resource(HostClock);
     clock.tick++;

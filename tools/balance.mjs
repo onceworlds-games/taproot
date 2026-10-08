@@ -4,7 +4,7 @@
 // still be caught, and a board that fills.
 
 import { STYLES, STYLE_NAMES, chooseOrder } from '../src/brain.js';
-import { DROP, TUNING, dropsOf, leaderOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from '../src/rules.js';
+import { DROP, TUNING, dropsOf, crownOf, leaderOf, makeBoard, pathTo, pickDropCell, seededRng, stepGrower, tally } from '../src/rules.js';
 
 const rounds = Number(process.argv[2] ?? 200);
 const seats = Number(process.argv[3] ?? 6);
@@ -36,7 +36,7 @@ function playRound(seed, styleOf) {
       }
     }
     const { income, cells: now } = tally(b);
-    b.crown = leaderOf(now);
+    b.crown = crownOf(now, b.crown);
     tick++;
     for (let k = 0; k < seats; k++) {
       // Seats take turns at going first, so nobody wins every tie.

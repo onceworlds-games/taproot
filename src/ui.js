@@ -231,7 +231,8 @@ export function flowViews() {
 
 // ---------------------------------------------------------------- the HUD
 
-const playing = ({ flow }) => !!flow && flow.phase === 'playing';
+/** While a round is played (and a poster that asks for the HUD). */
+const playing = ({ flow, world }) => !!flow && flow.phase === 'playing' && viewOf(world).hud !== false;
 
 /** Round 1's coach: what to point at, worked out a few times a second. */
 function coachOf(world, v, now) {
@@ -255,6 +256,30 @@ function coachOf(world, v, now) {
   }
   c.step = '';
   c.target = -1;
+  // Second: once the first root has landed, the biggest open patch within reach.
+  if (aim.ordered === 1 && mine?.mode === 'idle') {
+    const reach = reachMap(b, me);
+    let best = -1;
+    let bestValue = 0;
+    for (let i = 0; i < b.g.count; i++) {
+      if (b.owner[i] !== 0 || b.terrain[i] === 1 || reach.cost[i] > 4) continue;
+      let open = 0;
+      for (let d = 0; d < 6; d++) {
+        const j = b.g.nbr[i * 6 + d];
+        if (j >= 0 && b.owner[j] === 0 && b.terrain[j] !== 1) open++;
+      }
+      const value = open / (reach.cost[i] + 1);
+      if (value > bestValue) {
+        bestValue = value;
+        best = i;
+      }
+    }
+    if (best >= 0) {
+      c.step = 'grow';
+      c.target = best;
+      return c;
+    }
+  }
   if ((mine?.snips ?? 0) > 0) c.snipDone = true;
   // A thin enemy root within reach: show where a snip would bite (once, for a while).
   if (!c.snipDone && v.now > 12 && (c.shownSnip < 0 || now - c.shownSnip < 7)) {
@@ -297,7 +322,7 @@ function coachOf(world, v, now) {
   return c;
 }
 
-const COACH_WORDS = { water: 'TAP THE WATER', snip: 'TAP TO SNIP', guard: 'TAP YOUR ROOT: THICKEN' };
+const COACH_WORDS = { water: 'TAP THE WATER', grow: 'NOW TAP OPEN SOIL', snip: 'TAP TO SNIP', guard: 'TAP YOUR ROOT: THICKEN' };
 
 export function TaprootUi() {
   return defineModule({
@@ -324,7 +349,7 @@ export function TaprootUi() {
             draw: (p) => {
               const live = v.source !== 'demo';
               // Names under the seeds (live rounds only: the title's demo stays wordless).
-              if (live) {
+              if (live && v.names !== false) {
                 for (const o of v.growers) {
                   const c = b.seeds[o.seat];
                   const at = c >= 0 ? toScreen(g.x[c], g.y[c] - 1.15, scale) : null;
@@ -347,6 +372,15 @@ export function TaprootUi() {
               if (v.refused && now - v.refused.at < 0.6 && v.refused.cell < g.count) {
                 const at = toScreen(g.x[v.refused.cell], g.y[v.refused.cell] + 1, scale);
                 if (at) p.text('✕', at.x + Math.sin(now * 60) * 3, at.y, { size: 28, color: COLORS.ember, weight: 800, outline: 4, outlineColor: COLORS.night });
+              }
+              // The last ten seconds, big, over the top of the rim.
+              if (v.source === 'live' && v.remaining > 0 && v.remaining <= 10 && world.resource(FlowState).phase === 'playing') {
+                const at = toScreen(0, g.disc + 1.6, scale);
+                if (at) {
+                  const n = Math.ceil(v.remaining);
+                  const beat = v.remaining % 1;
+                  p.text(String(n), at.x, at.y, { size: 34 + beat * 14, color: COLORS.water, weight: 800, outline: 6, outlineColor: COLORS.night });
+                }
               }
               // Round 1's coach.
               const coach = live ? coachOf(world, v, now) : null;

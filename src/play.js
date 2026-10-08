@@ -10,7 +10,7 @@ import { viewOf } from './view.js';
 
 export const actions = {
   // Tap (or click) a cell: grow there. Tap your own roots: fill the soil round them. Hold and drag on a phone to see first.
-  point: Input.pointer({ drag: 'any', label: 'Tap a cell', hint: { keys: ['Click'], action: 'Grow toward it' } }),
+  point: Input.pointer({ drag: 'any', label: 'Tap a cell', hint: { keys: ['Click', 'Tap'], action: 'Grow there (your roots: thicken)' } }),
 };
 
 const out = { x: 0, y: 0 };

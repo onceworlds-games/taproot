@@ -9,6 +9,8 @@ import { DROP, NO_PARENT, ROCK, SEED_PARENT, TUNING, support } from './rules.js'
 import { COLORS, alpha, mix, seatLook } from './theme.js';
 
 const CORNERS = hexCorners(1);
+/** Seconds a cut-off root takes to wither away. */
+const WITHER = 1.8;
 const registered = new WeakSet();
 
 /** Registers the pass once per world. */
@@ -155,16 +157,41 @@ function drawDish(ctx, view, world, now) {
     ctx.arc(g.x[i], g.y[i], 0.09, 0, Math.PI * 2);
   }
   ctx.fill();
-  // Withering: grey husks that crumble and fade.
+  // Withering: the cut-off roots go grey, crack into pieces and sink into the soil.
   for (let i = 0; i < g.count; i++) {
     const age = now - v.ashAt[i];
-    if (age < 0 || age > 1.4 || b.owner[i]) continue;
-    const k = age / 1.4;
+    if (age < 0 || age > WITHER || b.owner[i]) continue;
+    const k = age / WITHER;
     const was = seatLook(v.ashOwner[i] - 1).color;
+    const grey = mix(was, COLORS.ash, Math.min(1, age * 6));
     ctx.beginPath();
-    hexPath(ctx, g.x[i], g.y[i] - k * 0.25, 0.92 - k * 0.3);
-    ctx.fillStyle = alpha(mix(was, COLORS.ash, Math.min(1, age * 3)), 0.55 * (1 - k));
+    hexPath(ctx, g.x[i], g.y[i] - k * 0.2, 0.9 - k * 0.25);
+    ctx.fillStyle = alpha(COLORS.ash, 0.42 * (1 - k));
     ctx.fill();
+    ctx.setLineDash([0.16, 0.12]);
+    ctx.strokeStyle = alpha('#cfc5ba', 0.85 * (1 - k));
+    ctx.lineWidth = 0.07;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // The dead root: in three broken pieces that drift apart.
+    const p = v.ashParent?.[i] ?? 7;
+    const j = p < 6 ? g.nbr[i * 6 + p] : -1;
+    if (j >= 0) {
+      const dx = g.x[j] - g.x[i];
+      const dy = g.y[j] - g.y[i];
+      ctx.strokeStyle = alpha(mix(grey, '#e6ddd2', 0.3), 0.95 * (1 - k));
+      ctx.lineWidth = 0.14;
+      ctx.lineCap = 'round';
+      for (let n = 0; n < 3; n++) {
+        const a0 = n / 3 + 0.04;
+        const a1 = (n + 1) / 3 - 0.04;
+        const drop = k * (0.15 + n * 0.12);
+        ctx.beginPath();
+        ctx.moveTo(g.x[i] + dx * a0, g.y[i] + dy * a0 - drop);
+        ctx.lineTo(g.x[i] + dx * a1, g.y[i] + dy * a1 - drop);
+        ctx.stroke();
+      }
+    }
   }
   // Territories: a tinted hex per cell, and a bright edge where it meets anyone else.
   const seats = b.seats;
@@ -242,11 +269,18 @@ function drawClock(ctx, v, disc, now) {
   ctx.strokeStyle = alpha(COLORS.night, 0.18);
   ctx.lineWidth = 0.22;
   ctx.stroke();
+  // Where the rim root will close: a notch at the top.
+  ctx.beginPath();
+  ctx.moveTo(0, r - 0.32);
+  ctx.lineTo(0, r + 0.32);
+  ctx.strokeStyle = alpha(COLORS.night, 0.6);
+  ctx.lineWidth = 0.16;
+  ctx.stroke();
   if (frac <= 0) return;
   // Clockwise from the top (y is up, so clockwise means falling angles).
   const start = Math.PI / 2;
   const end = start - frac * Math.PI * 2;
-  const color = flood ? COLORS.water : '#6b4a2f';
+  const color = flood ? COLORS.water : '#2f5a2a';
   ctx.beginPath();
   ctx.arc(0, 0, r, start, end, true);
   ctx.strokeStyle = color;
@@ -265,8 +299,8 @@ function drawClock(ctx, v, disc, now) {
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.quadraticCurveTo((x + lx) / 2 + Math.cos(a - Math.PI / 2) * 0.18, (y + ly) / 2 + Math.sin(a - Math.PI / 2) * 0.18, lx, ly);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 0.12;
+    ctx.strokeStyle = flood ? COLORS.water : '#45e08a';
+    ctx.lineWidth = 0.13;
     ctx.stroke();
   }
   // The growing tip.

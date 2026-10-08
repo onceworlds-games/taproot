@@ -140,11 +140,15 @@ function drawDish(ctx, view, world, now) {
     return;
   }
   const g = b.g;
-  // Specks of grit in the soil.
-  for (const s of specksFor(g)) {
+  // Specks of grit in the soil (two paths: light and dark).
+  for (const light of [true, false]) {
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = s.light ? '#5a3d2a' : '#2a1a11';
+    for (const s of specksFor(g)) {
+      if (s.light !== light) continue;
+      ctx.moveTo(s.x + s.r, s.y);
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = light ? '#5a3d2a' : '#2a1a11';
     ctx.fill();
   }
   drawClock(ctx, v, disc, now);
@@ -254,7 +258,22 @@ function drawDish(ctx, view, world, now) {
   drawPreview(ctx, v, b, world, now);
   drawSeeds(ctx, v, b, now);
   drawFlashes(ctx, v, b, now);
+  drawTap(ctx, v, b, now);
   ctx.restore();
+}
+
+/** A tap answers at once, before the host does: a ring in my colour where I tapped. */
+function drawTap(ctx, v, b, now) {
+  const t = v.tapped;
+  if (!t || v.me < 0 || !(t.cell >= 0 && t.cell < b.g.count)) return;
+  const age = now - t.at;
+  if (age < 0 || age > 0.4) return;
+  const k = age / 0.4;
+  ctx.beginPath();
+  ctx.arc(b.g.x[t.cell], b.g.y[t.cell], 0.3 + k * 0.9, 0, Math.PI * 2);
+  ctx.strokeStyle = alpha(seatLook(v.me).color, 1 - k);
+  ctx.lineWidth = 0.16 * (1 - k) + 0.04;
+  ctx.stroke();
 }
 
 /** The rim root: creeps round the dish as the round goes; blue in the Flood. */

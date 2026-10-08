@@ -174,6 +174,16 @@ export const Effects = defineSystem({
       feel?.shake(Math.min(0.7, (involved ? 0.25 : 0.1) + o.snipSize * 0.025));
       if (big && involved) feel?.hitStop(60);
     });
+    // Someone's planned root runs through mine: a low tick when a new threat appears.
+    if (live && v.me >= 0) {
+      let threat = '';
+      for (const o of v.growers) {
+        if (o.seat === v.me || o.mode !== 'reach') continue;
+        if (o.path.some((c) => v.board.owner[c] === v.me + 1)) threat += `${o.seat}:${o.target};`;
+      }
+      if (threat && threat !== s.threat) audio?.play('tick', { pitch: 0.6, volume: 0.7 });
+      s.threat = threat;
+    }
     // The Flood: the last seconds, sap flows double.
     const flood = live && flow?.phase === 'playing' && v.remaining <= TUNING.floodSeconds && v.remaining > 0;
     if (flood && !s.flood) {

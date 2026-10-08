@@ -16,20 +16,26 @@ Every couple of seconds:
 1. **Pick a target** (tap a cell). Your root's planned path shows as a dotted line from your nearest root, with its sap cost and,
    if it cuts through someone, how many of their cells would wither (`SNIP 14`).
 2. **Watch it grow**: the root snakes there a cell at a time, paying sap per cell (1 for open soil, more for an enemy cell).
-3. **Reward**: water drops (springs) raise your sap income; snips make enemy roots crumble and drop the dead cells back to open
-   soil for anyone to take.
+3. **Reward**: water drops give a burst of sap; snips make enemy roots crumble, pay you back in sap, and drop the dead cells back
+   to open soil for anyone to take.
 4. **Next decision**: reach for more water, snip a rival's neck, or tap your own roots to **thicken** them (bloom) because a
    dotted enemy line is heading for your thin neck.
 
 Rules, all of them:
 
 - Your territory is the cells your roots fill. Each must connect to your seed, through your own cells. Cut off = withered.
-- Sap: 2 a second, plus 0.6 a second for each water drop you hold. You hold at most 12.
-- Growing into open soil costs 1. Taking an enemy cell costs **2 + the number of that player's cells touching it** (2 to 8), so a
-  one-cell-wide root costs 4 to cut and the middle of a thick clump costs 8.
+- Sap flows to everyone: 1.2 a second at the start of a round, rising to 3 by its end. You hold at most 12.
+- **Water drops** rise on open soil, one at a time, a ripple showing where 1.5 s before. The first root to reach one drinks it:
+  +4 sap. (A race everyone can see coming; reaching far for one leaves a thin root behind you.)
+- Growing into open soil costs 1. Taking an enemy cell costs **3 + the number of that player's cells touching it** (4 for a lone
+  tip, up to 9 deep in a clump). Roots are drawn as thick as they are hard to cut.
+- Whatever you cut off feeds you: 1 sap for each cell that withers.
+- The leader wears a **crown**: their cells cost 1 less to take, so everyone can catch them.
 - Seeds can't be taken; nobody is ever knocked out. Rocks block.
 - Tap your own roots: **bloom**, filling the open soil around that spot.
-- The round lasts 90 seconds. The last 15 are the **Flood**: sap flows double. Most cells when the rim closes wins the round.
+- The round lasts 90 seconds. The last 15 are the **Flood**: sap flows double. Most cells when the rim closes wins the round;
+  places pay 10, 7, 5, 3, 2, 1 points over a match of 1 to 3 rounds (2 by default). Everyone moves one place round the dish
+  each round.
 
 ## Originality
 
@@ -51,9 +57,9 @@ What a player notices that is different in the first minute:
 - **3-2-1**: Flow's one countdown, restyled as a sprouting seed. Banner: `MOST ROOTS WINS`.
 - **+1 s**: my seed pulses with a halo; the nearest water drop (three cells away) glows with a ring and the words `TAP THE WATER`.
   The rest of the board is dimmer. On a computer the dotted path already follows the mouse.
-- **+3 s**: I tap the water. A root snakes to it in under a second with a rising pop per cell, the drop flashes, `+SAP`
-  floats up, my sap bulb fills faster. Hint gone.
-- **+6 s**: a second hint ring on the largest open patch beside me: `GROW`. I tap; the root runs there.
+- **+3 s**: I tap the water. A root snakes to it in about a second with a rising pop per cell, the drop splashes, `+4`
+  floats up, my sap glass fills. Hint gone.
+- **+6 s**: a second hint ring on the biggest open patch beside me: `NOW TAP OPEN SOIL`. I tap; the root runs there.
 - **+15 s**: my roots touch a rival's thin root. Their neck glows ember with `TAP TO SNIP` and the preview shows `SNIP 9`.
 - **+18 s**: I snip. Crack sound, a shake, their branch goes grey and crumbles; `SNIP 9` floats in my colour and the feed says
   `● YOU ✂ ▲ MIA`. I understand the game.
@@ -87,7 +93,7 @@ round ends. It turns blue for the Flood. The same rim frames the title, the lobb
 - Growth: each cell pops in (scale 0.6 to 1, eased back-out) with a soft pitched pop that rises while a root keeps growing.
 - Snip: a hard shears crack, hit-stop of 60 ms, camera shake by size, the cut cell flashes ember, the withered cells go grey and
   crumble into dust, `SNIP 14` floats up in the snipper's colour.
-- Water: a bloop and a ripple ring when a drop is taken; `+SAP`.
+- Water: a bloop and a splash ring when a drop is drunk; `+4` floats up.
 - Threat: an enemy's dotted line that crosses your root makes it pulse ember with a low tick.
 - Flood: rumble, the rim and water turn bright, music intensity up.
 - Music: Audio's procedural `chill` behind the title, `action` during rounds, intensity rising in the Flood.
@@ -104,10 +110,24 @@ round ends. It turns blue for the Flood. The same rim frames the title, the lobb
   - Snip feed: the last three snips (`● MIA ✂ ▲ KAI 14`), left side.
 - **Between rounds and results**: the final board stays visible; the standings in seed rows; the winner's seed is crowned.
 
+## Balance (tools/balance.mjs: bots against bots with the game's own rules)
+
+300 rounds of 6 seats: every seat ends with 23.5 to 24.7 cells on average (the dish is exactly the same from every seat); the
+four bot personalities (grower, cutter, keeper, balanced) win 77% to 109% of their fair share; about 59 snips a round, 3.5 cells
+each, the biggest 20; the board is 88% taken at 57 s; the leader at half time wins only a third of rounds and the leader when the
+Flood starts about half, so the end matters. A newcomer-paced seat (looks every 2 to 3.5 s, often picks a worse move) places
+4.1 of 6 on average, 4.0 in round 1, when bots don't snip for 20 s.
+
+What changed on the way, and why: income first was flat (the board filled in 10 s and the half-time leader won 86%); roots first
+thickened with age (old territory got so safe that the half-time leader won 83%); a great spring in the middle paid sap to its
+holder (bots spent 70% of all sap pulling it back and forth), so water became drops to race for; and once the board filled,
+bots that only snipped big went idle, so they chip at borders when their sap would otherwise go to waste.
+
 ## Pre-build check
 
 1. Yes: the glowing water three cells away and `TAP THE WATER`; the root is growing within 3 seconds.
-2. Water drops show income, roots' thickness shows how expensive they are to cut, dotted lines show what every rival is doing.
+2. Drops show where sap is (and the ripple where the next one rises), a root's thickness shows what it costs to cut, dotted lines
+   show what every rival is doing, the crown shows whom to gang up on.
 3. Yes: the dotted path, its sap cost and `SNIP n` with the doomed cells tinted before you commit.
 4. Yes: the feed and the ember flash name who snipped you and where; the result line says who cut most.
 5. The leader is big, so they have long thin roots: anyone can see their necks and their planned lines; the counter to a reaching

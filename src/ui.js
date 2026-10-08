@@ -520,6 +520,24 @@ export function TaprootUi() {
         },
         { anchor: 'left', offset: [10, 0], order: 5, when: (ctx) => playing(ctx) && !ctx.portrait },
       );
+      // On a phone: the latest snip, one line under the standings.
+      ui.view(
+        'taproot.feed.phone',
+        ({ world, time }) => {
+          const v = viewOf(world);
+          const f = (v.feed ?? [])[0];
+          if (v.source !== 'live' || !f || time.now - f.at > 4) return null;
+          const name = (seat) => (seat === v.me ? 'YOU' : short(v.growers[seat]?.name ?? '?', 8));
+          return UI.panel(
+            { dir: 'row', pad: [4, 10], gap: 6, align: 'center', fill: alpha(COLORS.night, 0.75), radius: 14, border: 0, opacity: Math.min(1, 4 - (time.now - f.at)) },
+            UI.label(name(f.by), { size: 17, color: f.by === v.me ? '#fff6e0' : seatLook(f.by).color, weight: 800 }),
+            UI.custom({ w: 22, h: 18, draw: (p, r) => scissors(p, r.x + r.w / 2, r.y + r.h / 2, 8) }),
+            UI.label(name(f.victim), { size: 17, color: f.victim === v.me ? '#fff6e0' : seatLook(f.victim).color, weight: 800 }),
+            UI.label(`−${f.size}`, { size: 18, color: COLORS.ember, weight: 800 }),
+          );
+        },
+        { anchor: 'top', offset: [0, 128], order: 5, when: (ctx) => playing(ctx) && ctx.portrait },
+      );
     },
   });
 }

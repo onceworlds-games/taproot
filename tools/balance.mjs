@@ -10,6 +10,8 @@ const rounds = Number(process.argv[2] ?? 200);
 const seats = Number(process.argv[3] ?? 6);
 // `casual`: seat 0 plays like a newcomer (looks every 2 to 3.5 s, often picks a worse move); its average place is printed.
 const casual = process.argv.includes('casual');
+// `first`: round 1, when bots leave everyone alone for the first 20 s.
+const first = process.argv.includes('first');
 const DT = 1 / 60;
 const whyTakes = {};
 
@@ -52,7 +54,7 @@ function playRound(seed, styleOf) {
           if (o === s || growers[o].mode !== 'reach') continue;
           for (const c of pathTo(b, o, growers[o].target)) if (b.owner[c] === s + 1) threatened.add(c);
         }
-        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: casual && s === 0 ? 0.35 : 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: t < 0, left: total - t, leader, sap: gr.sap });
+        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: casual && s === 0 ? 0.35 : 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: first && t < 20 && !(casual && s === 0), left: total - t, leader, sap: gr.sap });
         if (pick) {
           gr.target = pick.target;
           gr.why = pick.why;

@@ -160,13 +160,15 @@ export const ShowBoard = defineSystem({
         v.board.owner.set(live.owner);
         v.board.parent.set(live.parent);
         v.board.terrain.set(live.terrain);
-        v.board.born.set(live.born);
         v.board.seeds = live.seeds.slice();
         v.board.crown = live.crown;
       }
-      const remaining = state.until > 0 && phase === 'playing' ? Math.max(0, state.until - world.time.match) : phase === 'playing' ? 0 : TUNING.roundSeconds;
-      v.remaining = phase === 'playing' ? remaining : phase === 'roundEnd' ? 0 : TUNING.roundSeconds;
-      v.now = TUNING.roundSeconds - v.remaining;
+      // The round's clock from Flow (FlowState.until stays 0 in a timed round; the context has it).
+      const fc = flow?.context?.();
+      const remaining = phase === 'playing' ? Math.max(0, fc?.remaining ?? 0) : phase === 'roundEnd' ? 0 : TUNING.roundSeconds;
+      v.remaining = remaining;
+      v.total = phase === 'playing' && fc ? Math.max(1, (fc.elapsed ?? 0) + remaining) : TUNING.roundSeconds;
+      v.now = phase === 'playing' && fc ? Math.max(0, fc.elapsed ?? 0) : v.total - v.remaining;
       v.board.now = v.now;
       v.warn = soil.warn;
       v.warnAt = soil.warnAt;

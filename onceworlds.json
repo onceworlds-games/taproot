@@ -3,5 +3,14 @@
   "name": "Taproot",
   "description": "Tap to grow your roots. Snip theirs. Anything cut off withers.",
   "dir": ".",
-  "engine": "1"
+  "engine": "1",
+  "controls": [
+    {
+      "keys": [
+        "Click"
+      ],
+      "action": "Grow toward it"
+    }
+  ],
+  "genre": "Strategy"
 }

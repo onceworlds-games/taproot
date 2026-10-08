@@ -1,11 +1,10 @@
 // The rules of Taproot as plain functions on plain data: the map, what a cell costs, the way a root goes, growing, snipping and
 // withering. The host's systems, the bots, the screen's previews, the tests and the balance tool all call these.
 //
-// A board is { radius, seats, g (geometry), terrain, owner, parent, born, seeds, now }:
+// A board is { radius, seats, g (geometry), terrain, owner, parent, seeds, now, crown }:
 //   terrain[i]  0 soil, 1 rock, 2 a water drop (drunk by the first root to reach it)
 //   owner[i]    0 nobody, else seat index + 1
 //   parent[i]   the direction (0-5) a root grew into this cell from, 6 for a seed, 7 for none
-//   born[i]     the round's second the cell was taken (roots thicken with age)
 //   seeds[s]    the seed cell of seat s
 //   now         the round's second now
 //   crown       the seat in the lead (its cells are cheaper to take), or -1
@@ -20,8 +19,9 @@ export const SEED_PARENT = 6;
 
 /** Every number of the game, in one place. */
 export const TUNING = {
-  /** Sap a second for everyone. */
-  baseIncome: 2,
+  /** Sap a second for everyone: `baseIncome` at the start, rising by `incomeRamp` over the round (a careful start, a wild end). */
+  baseIncome: 1.2,
+  incomeRamp: 1.8,
   /** A water drop is drunk by the first root to reach it. A new one rises every `dropEvery` seconds while fewer than one a seat are out. */
   dropSap: 4,
   dropEvery: 2.4,
@@ -37,12 +37,11 @@ export const TUNING = {
   startSap: 4,
   /** Seconds between two cells of one root, at the fastest. */
   step: 0.16,
-  /** Open soil costs this; an enemy cell costs `enemyBase` plus its owner's cells touching it. */
+  /** Open soil costs this; an enemy cell costs `enemyBase`... */
   soilCost: 1,
   enemyBase: 3,
-  /** Roots thicken with age: one ring every `ageStep` seconds, up to `maxAge`, each adding 1 to what the cell costs to take. */
-  ageStep: 10,
-  maxAge: 3,
+  /** ...and this much more for each of its owner's cells touching it: thin roots are cheap to cut, clumps dear. */
+  supportCost: 1,
   /** How far a bloom fills around the tapped cell. */
   bloomRadius: 2,
   /** The round, and the Flood at its end (sap flows `floodRate` times as fast). */
@@ -96,7 +95,6 @@ export function makeBoard(seats, seed = 1, turnSeats = 0) {
   const terrain = new Uint8Array(g.count);
   const owner = new Uint8Array(g.count);
   const parent = new Uint8Array(g.count).fill(NO_PARENT);
-  const born = new Float32Array(g.count);
   const ringR = g.disc - 2;
   const angleOf = (s) => -Math.PI / 2 + (s / seats) * Math.PI * 2;
   const near = (a, r, skip) => nearestCell(g, Math.cos(a) * r, Math.sin(a) * r, skip);
@@ -116,7 +114,12 @@ export function makeBoard(seats, seed = 1, turnSeats = 0) {
     return out;
   };
   // `turnSeats` moves everyone round by that many places (a new round, a new spot), with the dish the same.
-  const spots = forEachSeat((s) => near(angleOf(s), ringR));
+  // A seed sits with all six of its neighbours on the dish.
+  const whole = (i) => {
+    for (let d = 0; d < 6; d++) if (g.nbr[i * 6 + d] < 0) return true;
+    return false;
+  };
+  const spots = forEachSeat((s) => near(angleOf(s), ringR, whole));
   const seeds = spots.map((_, s) => spots[(s + turnSeats) % seats]);
   const reserved = new Set();
   for (const sd of seeds) {
@@ -162,7 +165,7 @@ export function makeBoard(seats, seed = 1, turnSeats = 0) {
   }
   // Never wall anything off: while the open soil is split, rocks go back to soil (the same ones on every page).
   for (let i = 0; i < g.count && !openConnected(g, terrain); i++) if (terrain[i] === ROCK && g.dist(i, centre) !== 2) terrain[i] = SOIL;
-  const board = { radius, seats, g, terrain, owner, parent, born, seeds, now: 0, crown: -1 };
+  const board = { radius, seats, g, terrain, owner, parent, seeds, now: 0, crown: -1 };
   for (let s = 0; s < seats; s++) {
     const sd = seeds[s];
     owner[sd] = s + 1;
@@ -207,7 +210,7 @@ function openConnected(g, terrain) {
 }
 
 /** A deep copy of a board (the balance tool and previews change copies). */
-export const cloneBoard = (b) => ({ ...b, terrain: b.terrain.slice(), owner: b.owner.slice(), parent: b.parent.slice(), born: b.born.slice(), seeds: b.seeds.slice() });
+export const cloneBoard = (b) => ({ ...b, terrain: b.terrain.slice(), owner: b.owner.slice(), parent: b.parent.slice(), seeds: b.seeds.slice() });
 
 // ---------------------------------------------------------------- costs and paths
 
@@ -224,9 +227,6 @@ export function support(b, i) {
   return n;
 }
 
-/** How thick a cell's root has grown: 0 (just taken) to `maxAge`. */
-export const thickness = (b, i) => Math.max(0, Math.min(TUNING.maxAge, Math.floor((b.now - b.born[i]) / TUNING.ageStep)));
-
 /** Sap it costs seat `s` to take cell i: 0 if it's already theirs, Infinity for rocks and seeds. */
 export function cellCost(b, s, i) {
   const o = b.owner[i];
@@ -234,7 +234,7 @@ export function cellCost(b, s, i) {
   if (b.terrain[i] === ROCK) return Infinity;
   if (o === 0) return TUNING.soilCost;
   if (isSeed(b, i)) return Infinity;
-  return TUNING.enemyBase + support(b, i) + thickness(b, i) - (b.crown === o - 1 ? TUNING.crown : 0);
+  return TUNING.enemyBase + TUNING.supportCost * support(b, i) - (b.crown === o - 1 ? TUNING.crown : 0);
 }
 
 /** A tiny binary heap keyed by cost, ties broken by cell index so every page finds the same paths. */
@@ -341,7 +341,6 @@ export function claim(b, s, i) {
   }
   b.owner[i] = s + 1;
   b.parent[i] = from >= 0 ? from : NO_PARENT;
-  b.born[i] = Math.floor(b.now);
   if (b.terrain[i] === ROCK) b.terrain[i] = SOIL;
   if (was === 0 || was === s + 1) return { victim: -1, cells: [] };
   const victim = was - 1;
@@ -512,10 +511,13 @@ export function leaderOf(cells) {
   return shared ? -1 : best;
 }
 
+/** Everyone's sap a second at a moment of the round (before the Flood doubles it). */
+export const incomeAt = (seconds) => TUNING.baseIncome + TUNING.incomeRamp * Math.max(0, Math.min(1, seconds / TUNING.roundSeconds));
+
 /** Cells and sap a second per seat. */
 export function tally(b) {
   const cells = new Array(b.seats).fill(0);
-  const income = new Array(b.seats).fill(TUNING.baseIncome);
+  const income = new Array(b.seats).fill(incomeAt(b.now ?? 0));
   for (let i = 0; i < b.g.count; i++) {
     const o = b.owner[i];
     if (!o) continue;

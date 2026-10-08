@@ -44,13 +44,13 @@ function playRound(seed, styleOf) {
       const gr = growers[s];
       gr.think -= DT;
       if (gr.think <= 0) {
-        gr.think = rng.float(0.55, 1.1);
+        gr.think = rng.float(0.9, 2.0);
         const threatened = new Set();
         for (let o = 0; o < seats; o++) {
           if (o === s || growers[o].mode !== 'reach') continue;
           for (const c of pathTo(b, o, growers[o].target)) if (b.owner[c] === s + 1) threatened.add(c);
         }
-        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: t < 0, left: total - t, leader });
+        const pick = chooseOrder(b, s, { style: STYLES[gr.style], rng, mistake: 0.12, threatened, current: gr.mode === 'idle' ? -1 : gr.target, noSnip: t < 0, left: total - t, leader, sap: gr.sap });
         if (pick) {
           gr.target = pick.target;
           gr.why = pick.why;
@@ -75,6 +75,11 @@ function playRound(seed, styleOf) {
       const { cells } = tally(b);
       const best = cells.indexOf(Math.max(...cells));
       if (Math.abs(t - total / 2) < 0.6) stats.halfLeader = best;
+      if (stats.full === undefined) {
+        let open = 0;
+        for (let i = 0; i < b.g.count; i++) if (b.owner[i] === 0 && b.terrain[i] !== 1) open++;
+        if (open <= b.g.count * 0.12) stats.full = t;
+      }
       if (Math.abs(t - (total - TUNING.floodSeconds)) < 0.6) stats.floodLeader = best;
       if (leader >= 0 && best !== leader) stats.leadChanges++;
       leader = best;
@@ -102,6 +107,8 @@ let takes = 0;
 let halfWins = 0;
 let floodWins = 0;
 let drops = 0;
+let fullAt = 0;
+const total = TUNING.roundSeconds;
 let drunk = 0;
 let comeback = 0;
 for (let k = 0; k < rounds; k++) {
@@ -121,6 +128,7 @@ for (let k = 0; k < rounds; k++) {
   snips += r.stats.snips;
   takes += r.stats.takes;
   drops += r.stats.drops;
+  fullAt += r.stats.full ?? total;
   drunk += r.stats.drunk ?? 0;
   withered += r.stats.withered;
   biggest = Math.max(biggest, r.stats.biggest);
@@ -144,4 +152,5 @@ console.log(`open soil at the end: ${f((100 * openEnd) / rounds, 0)}%, winner mi
 console.log('takes by reason', JSON.stringify(whyTakes));
 console.log(`leader at half time wins: ${f((100 * halfWins) / rounds, 0)}%, leader when the Flood starts wins: ${f((100 * floodWins) / rounds, 0)}%`);
 console.log(`drops risen a round: ${f(drops / rounds)}, drunk: ${f(drunk / rounds)}`);
+console.log(`board 88% taken at: ${f(fullAt / rounds)} s`);
 console.log(`first water at: ${f(firstWater / Math.max(1, firstWaterN))} s`);

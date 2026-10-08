@@ -1,11 +1,11 @@
 // The dish, drawn in one pass before the world's own pictures (floating words and particles go over it): soil, stones, the
-// territories, roots that thicken with age, water, seeds, everyone's planned roots, this player's preview, and the rim root that
+// territories, roots as thick as they are hard to cut, water, seeds, everyone's planned roots, this player's preview, and the rim root that
 // is the round's clock. World units: a cell is 1 from its middle to a corner, y points up.
 import { defineSystem } from '@onceworlds/engine';
 import { Aim } from './components.js';
 import { DIRS, hexCorners } from './hex.js';
 import { viewOf } from './view.js';
-import { DROP, NO_PARENT, ROCK, SEED_PARENT, TUNING, thickness } from './rules.js';
+import { DROP, NO_PARENT, ROCK, SEED_PARENT, TUNING, support } from './rules.js';
 import { COLORS, alpha, mix, seatLook } from './theme.js';
 
 const CORNERS = hexCorners(1);
@@ -234,7 +234,7 @@ function drawDish(ctx, view, world, now) {
 function drawClock(ctx, v, disc, now) {
   const r = disc + 1.6;
   const live = v.source === 'live' || v.source === 'frozen';
-  const total = live ? TUNING.roundSeconds : 70;
+  const total = live ? v.total ?? TUNING.roundSeconds : 70;
   const frac = Math.max(0, Math.min(1, live ? v.now / total : v.now / total));
   const flood = live && v.remaining <= TUNING.floodSeconds && v.remaining > 0;
   ctx.beginPath();
@@ -276,20 +276,27 @@ function drawClock(ctx, v, disc, now) {
   ctx.fill();
 }
 
+/** 0 (a lone tip) to 3 (deep in a clump), from how many of its owner's cells touch it. */
+const thickOf = (b, i) => {
+  const n = support(b, i);
+  return n <= 1 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : 3;
+};
+
 function drawRoots(ctx, v, b, now) {
   const g = b.g;
   for (let s = 0; s < b.seats; s++) {
     const look = seatLook(s);
-    // Two strokes per thickness: a soft glow under a bright core.
+    // A root is as thick as it is hard to cut (how many of its own cells hold it). Two strokes per thickness: a soft glow under
+    // a bright core.
     for (let pass = 0; pass < 2; pass++) {
-      for (let thick = 0; thick <= TUNING.maxAge; thick++) {
+      for (let thick = 0; thick <= 3; thick++) {
         ctx.beginPath();
         let any = false;
         for (let i = 0; i < g.count; i++) {
           if (b.owner[i] !== s + 1) continue;
           const p = b.parent[i];
           if (p === NO_PARENT || p === SEED_PARENT) continue;
-          if (thickness(b, i) !== thick) continue;
+          if (thickOf(b, i) !== thick) continue;
           const j = g.nbr[i * 6 + p];
           if (j < 0) continue;
           any = true;
@@ -306,7 +313,7 @@ function drawRoots(ctx, v, b, now) {
           ctx.quadraticCurveTo(mx, my, x1, y1);
         }
         if (!any) continue;
-        const w = 0.1 + thick * 0.075;
+        const w = 0.09 + thick * 0.07;
         ctx.lineCap = 'round';
         if (pass === 0) {
           ctx.strokeStyle = alpha(look.color, 0.22);

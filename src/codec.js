@@ -1,5 +1,6 @@
-// The board to and from the `Soil` component: one character a cell. Decoding never trusts what arrives: a wrong length or an
-// unknown character reads as open soil, so a forged or garbled board can't break a page.
+// The board to and from the `Soil` component: one character a cell (owner and root direction; terrain in a second string).
+// Decoding never trusts what arrives: a wrong length or an unknown character reads as open soil, so a forged or garbled board
+// can't break a page.
 import { geometry } from './hex.js';
 import { NO_PARENT, ROCK, SOIL, DROP } from './rules.js';
 
@@ -8,7 +9,6 @@ const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$
 const INDEX = new Int16Array(128).fill(-1);
 for (let i = 0; i < ALPHA.length; i++) INDEX[ALPHA.charCodeAt(i)] = i;
 const TERRAIN = ['.', '#', '~'];
-const AGE_MAX = ALPHA.length - 1;
 
 const decodeChar = (str, i) => {
   const c = str.charCodeAt(i);
@@ -21,34 +21,28 @@ export const SIZES = [6, 7, 8];
 export function encode(b, soil) {
   const n = b.g.count;
   let cells = '';
-  let age = '';
   let terrain = '';
   for (let i = 0; i < n; i++) {
     cells += ALPHA[b.owner[i] * 8 + b.parent[i]];
-    age += ALPHA[Math.max(0, Math.min(AGE_MAX, Math.floor(b.born[i])))];
     terrain += TERRAIN[b.terrain[i]] ?? '.';
   }
   soil.size = b.radius;
   soil.seats = b.seats;
   soil.cells = cells;
-  soil.age = age;
   soil.terrain = terrain;
   soil.seeds = Array.from(b.seeds);
   soil.crown = b.crown ?? -1;
 }
 
-/** Only what changes in play: owners, roots, ages and water. */
+/** Only what changes in play: owners, roots and water. */
 export function encodeLive(b, soil) {
   let cells = '';
-  let age = '';
   let terrain = '';
   for (let i = 0; i < b.g.count; i++) {
     cells += ALPHA[b.owner[i] * 8 + b.parent[i]];
-    age += ALPHA[Math.max(0, Math.min(AGE_MAX, Math.floor(b.born[i])))];
     terrain += TERRAIN[b.terrain[i]] ?? '.';
   }
   if (soil.cells !== cells) soil.cells = cells;
-  if (soil.age !== age) soil.age = age;
   if (soil.terrain !== terrain) soil.terrain = terrain;
   if (soil.crown !== (b.crown ?? -1)) soil.crown = b.crown ?? -1;
 }
@@ -65,10 +59,9 @@ export function decode(soil, into) {
   const b =
     into && into.g === g && into.seats === seats
       ? into
-      : { radius: size, seats, g, terrain: new Uint8Array(n), owner: new Uint8Array(n), parent: new Uint8Array(n), born: new Float32Array(n), seeds, now: 0, crown: -1 };
+      : { radius: size, seats, g, terrain: new Uint8Array(n), owner: new Uint8Array(n), parent: new Uint8Array(n), seeds, now: 0, crown: -1 };
   b.seeds = seeds;
   const cells = typeof soil.cells === 'string' ? soil.cells : '';
-  const age = typeof soil.age === 'string' ? soil.age : '';
   const terrain = typeof soil.terrain === 'string' ? soil.terrain : '';
   for (let i = 0; i < n; i++) {
     const v = i < cells.length ? decodeChar(cells, i) : -1;
@@ -79,9 +72,8 @@ export function decode(soil, into) {
       parent = NO_PARENT;
     }
     b.owner[i] = owner;
-    b.parent[i] = owner ? parent : NO_PARENT;
-    const a = i < age.length ? decodeChar(age, i) : 0;
-    b.born[i] = a >= 0 ? a : 0;
+    // Only a seed is a seed.
+    b.parent[i] = owner && parent !== 6 ? parent : NO_PARENT;
     const t = terrain[i];
     b.terrain[i] = t === '#' ? ROCK : t === '~' ? DROP : SOIL;
   }

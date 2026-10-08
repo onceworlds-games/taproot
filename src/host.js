@@ -120,6 +120,9 @@ export const Grow = defineSystem({
     const ctx = flow.context();
     const now = Math.max(0, ctx.elapsed ?? 0);
     b.now = now;
+    // The bots read the clock from here (their context has no Flow).
+    b.remaining = ctx.remaining ?? TUNING.roundSeconds - now;
+    b.round = ctx.round;
     const growers = growersOf(world);
     const { cells, income } = tally(b);
     b.crown = leaderOf(cells);

@@ -11,6 +11,9 @@ import { TUNING } from './rules.js';
 /** A bot's personality, from its seat id (the same on every host). */
 export const styleOf = (id) => STYLE_NAMES[hashString(String(id)) % STYLE_NAMES.length];
 
+// People don't change their minds several times a second: each bot looks again every second or two (sooner the sharper it is).
+const nextLook = new WeakMap();
+
 export const BotBrain = defineBotSystem({
   name: 'taproot:bots',
   query: [Planter],
@@ -20,13 +23,17 @@ export const BotBrain = defineBotSystem({
     if (flow.phase !== 'playing') return;
     const b = boardOf(world);
     if (!b) return;
+    const now = world.time.now;
+    if (now < (nextLook.get(ctx.entity) ?? 0)) return;
+    nextLook.set(ctx.entity, now + 0.9 + (1 - (bot.skill ?? 0.5)) * 0.8 + ctx.rng.float(0, 0.5));
     const growers = growersOf(world);
     const me = growers.find((e) => e && e.get(Grower).id === planter.seat);
     if (!me) return;
     const g = me.get(Grower);
     const s = g.seat;
-    const remaining = flow.until > 0 ? Math.max(0, flow.until - world.time.match) : TUNING.roundSeconds;
-    const elapsed = TUNING.roundSeconds - remaining;
+    // The host's growing writes the round's clock onto the board it keeps (FlowState.until stays 0 in a timed round).
+    const elapsed = b.now ?? 0;
+    const remaining = b.remaining ?? TUNING.roundSeconds - elapsed;
     // What the others are heading for: our cells on their planned roots.
     const threatened = new Set();
     let leader = -1;
@@ -41,16 +48,16 @@ export const BotBrain = defineBotSystem({
       if (o.seat === s) continue;
       for (const c of o.path) if (b.owner[c] === s + 1) threatened.add(c);
     }
-    b.now = elapsed;
     const pick = chooseOrder(b, s, {
       style: STYLES[styleOf(planter.seat)],
       rng: ctx.rng,
       mistake: Math.min(0.35, 0.05 + (bot.mistake ?? 0.1)),
-      noSnip: flow.round === 1 && elapsed < 20,
+      noSnip: (b.round ?? flow.round) === 1 && elapsed < 20,
       left: remaining,
       leader,
       threatened,
       current: g.mode === 'idle' ? -1 : g.target,
+      sap: g.sap,
     });
     if (pick && (pick.target !== g.target || g.mode === 'idle')) applyOrder(world, planter.seat, pick.target);
   },

@@ -57,15 +57,19 @@ export function chooseOrder(b, s, opts) {
     const odds = mine < best - 0.5 ? 1 : mine <= best + 0.5 ? 0.6 : 0.2;
     add(c, (style.water * TUNING.dropSap * 0.7 * odds) / (mine + 1), 'water');
   }
-  // Snips: an enemy cell whose loss withers the most for the least sap.
+  // Snips and takes: an enemy cell, worth what it withers (and the sap that brings back) and the cell itself, for the sap it
+  // costs. A lone border cell is a small gain, but when the dish is full it is the only one.
   if (!opts.noSnip) {
     for (let v = 0; v < b.seats; v++) {
       if (v === s) continue;
       const sizes = snipSizes(b, v);
+      const lead = opts.leader === v ? 1.3 : 1;
       for (let i = 0; i < g.count; i++) {
-        if (sizes[i] < 4 || reach.cost[i] === Infinity || reach.cost[i] > 16) continue;
-        const lead = opts.leader === v ? 1.3 : 1;
-        add(i, (style.snip * lead * (sizes[i] - 1) * (1 + TUNING.compost) * 0.6) / (reach.cost[i] + 2), 'snip');
+        const big = sizes[i] >= 4;
+        if (sizes[i] < 1 || reach.cost[i] === Infinity || reach.cost[i] > (big ? 16 : 7)) continue;
+        if (big) add(i, (style.snip * lead * (sizes[i] - 1) * (1 + TUNING.compost) * 0.6) / (reach.cost[i] + 2), 'snip');
+        // Chipping at a border: only with sap to spare (it would go to waste at the cap otherwise).
+        else if (opts.sap === undefined || opts.sap >= TUNING.sapCap * 0.75) add(i, (style.snip * lead * (sizes[i] + 1) * 0.06) / (reach.cost[i] + 2), 'take');
       }
     }
   }

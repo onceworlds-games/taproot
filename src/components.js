@@ -8,7 +8,7 @@ export const MAX_CELLS = 256;
 
 /**
  * The board, as short strings (one character a cell) so a change costs a few hundred bytes:
- * `cells` holds owner and root direction, `age` the second each cell was taken, `terrain` soil, rock or water.
+ * `cells` holds owner and root direction, `terrain` soil, rock or water.
  */
 export const Soil = defineComponent(
   'Soil',
@@ -16,7 +16,6 @@ export const Soil = defineComponent(
     size: t.u8(7),
     seats: t.u8(6),
     cells: t.string(MAX_CELLS),
-    age: t.string(MAX_CELLS),
     terrain: t.string(MAX_CELLS),
     seeds: t.list(t.u16(), 8),
     /** The seat in the lead (its roots are cheaper to take), or -1. */

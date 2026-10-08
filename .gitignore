@@ -4,3 +4,6 @@ node_modules/
 store/shot*.png
 .DS_Store
 *.log
+# Pictures shot --story saves to look at.
+store/story/
+store/story.png
